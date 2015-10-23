@@ -1,0 +1,234 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <!-- 共通ヘッダー -->
+    <!-- IE9/10 で Canvas を使用する場合 -->
+    <!-- <meta http-equiv="X-UA-Compatible" content="IE=edge"> -->
+    <!-- IE11 以上で Canvas を使用する場合 -->
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- [if lt IE 9]>
+        <script src="js/htmlSshiv.js"></script>
+        <script src="js/respond.min.js"></script>
+    <![endif]-->
+    <hta:application id="app" 
+            navigable = "yes"
+            applicationname="test"
+            border="thick"
+            caption="yes"
+            showintaskbar="yes"
+            singleinstance="yes"
+            sysmenu="yes"
+            windowstate="normal"/>
+    <!-- 共通ヘッダー ここまで -->
+    <meta charset="utf-8">
+
+    <style type="text/css">
+        div.zero { margin: 0px; }
+        div.jumbotron {margin: 30px 0px 0px 0px;}
+        pre.zero { margin: 0px; }
+        pre.panel-warning {background-color: #FFFFF0; }
+        html,
+        body {
+          height: 100%;
+          /* html と body 要素はパディングやマージンを持てません。*/
+        }
+
+        /* フッターを下部へ押しやるための、コンテンツのラッパー */
+        #wrap {
+          min-height: 100%;
+          height: auto;
+          /* フッターの高さ分だけ、ネガティブインデントを指定 */
+          margin: 0 auto -52px;
+          /* フッターの高さ分だけ、パディングを指定 */
+          padding: 0 0 52px;
+        }
+
+        /* ここでフッターの高さを指定 */
+        #footer {
+          height: 52px;
+          background-color: #f5f5f5;
+        }
+    </style>
+  </head>
+<!-- メイン -->
+<body>
+    <div id="wrap">
+    <nav class="navbar navbar-inverse" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">Library管理</a>
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#mymenu">
+                    <span class="sr-only">ナビゲーションボタン</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse" id="mymenu">
+                <ul class="nav navbar-nav navbar-left">
+                    <li class="active"><a href="#/index">Libraryの切り替え</a></li>
+                    <li><a href="#/about">About</a></li>
+                    <li><a href="#">未定義</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-left">
+                    <li><a href="#">印刷(未実装)</a></li>
+                </ul>
+               
+                <!--
+                <form class="navbar-form navbar-left">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="検索">
+                    </div>
+                    <button type="submit" class="btn btn-default">検索(未実装)</button>
+                </form>
+                -->
+
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#">設定</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div id="block-contetns"></div>
+    <br/>
+
+    <!-- Script -->
+    <script src="js/opal.js"></script>
+    <script src="js/opal-parser.js"></script>
+    <script src="js/jquery-1.11.3.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/external/opal-jquery-0.4.0.js"></script>
+    <script src="js/filewsh.js"></script>
+    <script type="text/javascript">Opal.load('opal-parser')</script>
+    <script src="coffee/resize.js"></script>
+    <script language="JavaScript">
+        changeWindow(780, 600);
+        $('input[id=fileInput]').change(function(){
+               $("#photo-dummy").text($(this).val());
+               
+        });
+    </script>
+    
+    <script type="text/ruby"> 
+
+        class RootsWsh
+          def initialize
+            @roots = {}
+            roots
+          end
+
+          def roots
+          end
+          
+          def set_html(url_path, file_path)
+            if FileWsh.exists?(file_path)
+              @roots[url_path] = file_path
+                Element.find("a[href='#{url_path}']").on :click do |e|
+                  Element.find("#block-contetns").html =  FileWsh.open(file_path, "r").read
+                  if block_given?
+                    yield e
+                  end
+                end
+            else
+              raise
+            end
+          end
+            
+          def root_to(url_path)
+            if nil != (file_path = @roots[url_path])
+              if FileWsh.exists?(file_path)
+                #alert file_path
+                Element.find("#block-contetns").html =  FileWsh.open(file_path, "r").read
+                else
+                raise
+              end
+              if block_given?
+                yield
+              end
+            else
+              raise
+            end
+          end 
+        end
+
+        class RootsHello < RootsWsh
+          @@DIR_PATH = "test_dir"
+          def check_dir
+            if DirWsh.exists?(@@DIR_PATH)
+              html_text = ""
+              DirWsh.glob_dirs(@@DIR_PATH).each do |dir_name|
+                html_text += %!
+            <div class="row">
+                <div class="col-xm-2 col-sm-1"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></div>
+                <div class="col-xm-2 col-sm-1">
+                    <span class="glyphicon glyphicon-folder-close"> 
+                </div>
+                <div class="col-xm-8 col-sm-10">
+                    <span class="label label-success" >#{dir_name}</span>
+                </div>
+            </div>
+                !
+              end
+              Element.find("#sub-dir").html = html_text
+            end
+          end
+
+          def set_add_dir
+              Element.find("#change-dir").on :click do
+                if DirWsh.exists?(@@DIR_PATH)
+                  index = 1
+                  loop do
+                    break if ! DirWsh.exists?(FileWsh.join(@@DIR_PATH, "lib" + index.to_s))
+                    index += 1
+                  end
+                  FileUtilWsh.mkdir(FileWsh.join(@@DIR_PATH, "lib" + index.to_s))
+                  check_dir
+                end
+              end
+          end
+
+          def roots
+            set_html("#/index", "hello_roots/index.html") do 
+              check_dir
+              set_add_dir
+            end
+
+            set_html("#/about", "hello_roots/about.html") do |e|
+              Element.find("#example1").on :click do
+                Element.find("#example1").text = "説明100"
+              end
+            end
+
+          end
+
+        end
+
+
+
+        Document.ready? do
+            roots = RootsHello.new
+            roots.root_to "#/index"
+            roots.check_dir
+            roots.set_add_dir
+        end
+    </script>
+
+    <!-- #wrap -->
+    </div>
+    <!-- footer -->
+    <div class="panel panel-footer zero" id="#footer">
+      <div class="container text-center">
+        <p class="text-muted credit">Copyright (C) 2015  Block ice Ruby Cneter; user contributions licensed under MIT</p>
+      </div>
+    </div>
+</body>
+
+ 
+<!-- メイン ここまで -->
+</html>
